@@ -10,6 +10,9 @@ module.exports = (api, options, rootOptions) => {
 	api.onCreateComplete(() => {
 		// Modify router file
 		modifyRouter(api);
+
+		// Rewrite <router-link> components to <localized-link>
+		if (options.rewriteRouterLink) rewriteRouterLink(api);
 	});
 
 	// Render the contents of template folder
@@ -37,6 +40,24 @@ function modifyRouter (api) {
 
 	// Find the new VueRouter statement and replace it
 	content = content.replace(/new VueRouter/, 'new LangRouter');
+
+	// Replace file
+	fs.writeFileSync(path, content, { encoding: 'utf-8' });
+}
+
+function rewriteRouterLink(api) {
+	// Get filesystem
+	const fs = require('fs');
+
+	// Get path and file content
+	const path = api.resolve('./src/App.vue');
+	let content = fs.readFileSync(path, { encoding: 'utf-8' });
+
+	// Find the opening <router-link> tag and replace it
+	content = content.replace(/<router-link/g, '<localized-link');
+
+	// Find the closing </router-link> tag and replace it
+	content = content.replace(/<\/router-link>/g, '<\/localized-link>');
 
 	// Replace file
 	fs.writeFileSync(path, content, { encoding: 'utf-8' });

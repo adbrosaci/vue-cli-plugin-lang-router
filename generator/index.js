@@ -1,3 +1,6 @@
+const fs = require('fs');
+const chalk = require('chalk');
+
 module.exports = (api, options, rootOptions) => {
 
 	// Add Vue Lang Router dependency
@@ -11,8 +14,8 @@ module.exports = (api, options, rootOptions) => {
 		// Modify router file
 		modifyRouter(api);
 
-		// Rewrite <router-link> components to <localized-link>
-		if (options.rewriteRouterLink) rewriteRouterLink(api);
+		// Replace <router-link> components with <localized-link>
+		if (options.replaceRouterLink) replaceRouterLink(api);
 
 		// Add <language-switcher> component
 		if (options.addLanguageSwitcher) addLanguageSwitcher(api);
@@ -27,13 +30,18 @@ module.exports = (api, options, rootOptions) => {
 }
 
 function modifyRouter (api) {
-	// Get filesystem and determine extension
-	const fs = require('fs');
+	// Determine extension
 	const ext = api.hasPlugin('typescript') ? 'ts' : 'js';
-
+	
 	// Get path and file content
 	const path = api.resolve(`./src/router/index.${ext}`);
-	let content = fs.readFileSync(path, { encoding: 'utf-8' });
+	let content;
+	
+	try {
+		content = fs.readFileSync(path, { encoding: 'utf-8' });
+	} catch (err) {
+		return console.log(chalk.red('\nRouter file not found, make sure to add LangRouter manually!'));
+	}
 
 	// Find the Vue Router import statement and replace it
 	if (ext == 'ts') {
@@ -53,13 +61,16 @@ function modifyRouter (api) {
 	fs.writeFileSync(path, content, { encoding: 'utf-8' });
 }
 
-function rewriteRouterLink(api) {
-	// Get filesystem
-	const fs = require('fs');
-
+function replaceRouterLink(api) {
 	// Get path and file content
 	const path = api.resolve('./src/App.vue');
-	let content = fs.readFileSync(path, { encoding: 'utf-8' });
+	let content;
+	
+	try {
+		content = fs.readFileSync(path, { encoding: 'utf-8' });
+	} catch (err) {
+		return console.log(chalk.red('\nApp.vue not found, skipping <router-link> replacement.'));
+	}
 
 	// Find the opening <router-link> tag and replace it
 	content = content.replace(/<router-link/g, '<localized-link');
@@ -72,12 +83,15 @@ function rewriteRouterLink(api) {
 }
 
 function addLanguageSwitcher(api) {
-	// Get filesystem
-	const fs = require('fs');
-
 	// Get path and file content
 	const path = api.resolve('./src/App.vue');
-	let content = fs.readFileSync(path, { encoding: 'utf-8' });
+	let content;
+	
+	try {
+		content = fs.readFileSync(path, { encoding: 'utf-8' });
+	} catch (err) {
+		return console.log(chalk.red('\nApp.vue not found, skipping <language-switcher> example.'));
+	}
 
 	// The <language-switcher> template
 	const languageSwitcher = `
@@ -96,7 +110,6 @@ function addLanguageSwitcher(api) {
 		content = content.replace(/<div.*>/, '$&' + languageSwitcher);
 	}
 	
-
 	// Replace file
 	fs.writeFileSync(path, content, { encoding: 'utf-8' });
 }

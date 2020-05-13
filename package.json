@@ -20,5 +20,8 @@
 		"url": "http://radekaltof.com"
 	},
 	"license": "MIT",
-	"homepage": "https://github.com/radek-altof/vue-cli-plugin-lang-router#readme"
+	"homepage": "https://github.com/radek-altof/vue-cli-plugin-lang-router#readme",
+	"dependencies": {
+		"chalk": "^2.4.2"
+	}
 }

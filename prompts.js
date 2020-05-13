@@ -5,9 +5,9 @@ module.exports = [
 		message: 'Add example files for language routing?',
 		default: true,
 	},{
-		name: 'rewriteRouterLink',
+		name: 'replaceRouterLink',
 		type: 'confirm',
-		message: 'Rewrite <router-link> to <localized-link> in App.vue?',
+		message: 'Replace <router-link> with <localized-link> in App.vue?',
 		default: true,
 	},{
 		name: 'addLanguageSwitcher',

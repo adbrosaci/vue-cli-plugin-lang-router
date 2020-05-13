@@ -1,0 +1,24 @@
+{
+	"name": "vue-cli-plugin-lang-router",
+	"version": "0.1.1",
+	"description": "Vue CLI plugin that helps install language routing to an existing Vue project",
+	"main": "index.js",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/radek-altof/vue-cli-plugin-lang-router.git"
+	},
+	"keywords": [
+		"vue",
+		"cli",
+		"router",
+		"lang",
+		"i18n"
+	],
+	"author": {
+		"name": "Radek Altof",
+		"email": "radek.altof@gmail.com",
+		"url": "http://radekaltof.com"
+	},
+	"license": "MIT",
+	"homepage": "https://github.com/radek-altof/vue-cli-plugin-lang-router#readme"
+}

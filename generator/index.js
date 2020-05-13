@@ -11,6 +11,13 @@ module.exports = (api, options, rootOptions) => {
 		// Modify router file
 		modifyRouter(api);
 	});
+
+	// Render the contents of template folder
+	if (options.renderTemplate) {
+		api.render('./template', {
+			...options,
+		});
+	}
 }
 
 function modifyRouter (api) {

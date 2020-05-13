@@ -9,11 +9,11 @@ module.exports = (api, options, rootOptions) => {
 
 	api.onCreateComplete(() => {
 		// Modify router file
-		modifyRouter();
+		modifyRouter(api);
 	});
 }
 
-function modifyRouter () {
+function modifyRouter (api) {
 	// Get filesystem and determine extension
 	const fs = require('fs');
 	const ext = api.hasPlugin('typescript') ? 'ts' : 'js';

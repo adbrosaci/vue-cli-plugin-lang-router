@@ -9,5 +9,10 @@ module.exports = [
 		type: 'confirm',
 		message: 'Rewrite <router-link> to <localized-link> in App.vue?',
 		default: true,
+	},{
+		name: 'addLanguageSwitcher',
+		type: 'confirm',
+		message: 'Add example <language-switcher> component?',
+		default: false,
 	},
 ];

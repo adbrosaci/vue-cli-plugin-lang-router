@@ -13,6 +13,9 @@ module.exports = (api, options, rootOptions) => {
 
 		// Rewrite <router-link> components to <localized-link>
 		if (options.rewriteRouterLink) rewriteRouterLink(api);
+
+		// Add <language-switcher> component
+		if (options.addLanguageSwitcher) addLanguageSwitcher(api);
 	});
 
 	// Render the contents of template folder
@@ -63,6 +66,36 @@ function rewriteRouterLink(api) {
 
 	// Find the closing </router-link> tag and replace it
 	content = content.replace(/<\/router-link>/g, '<\/localized-link>');
+
+	// Replace file
+	fs.writeFileSync(path, content, { encoding: 'utf-8' });
+}
+
+function addLanguageSwitcher(api) {
+	// Get filesystem
+	const fs = require('fs');
+
+	// Get path and file content
+	const path = api.resolve('./src/App.vue');
+	let content = fs.readFileSync(path, { encoding: 'utf-8' });
+
+	// The <language-switcher> template
+	const languageSwitcher = `
+	<language-switcher v-slot="{ links }">
+		<router-link :to="link.url" v-for="link in links" :key="link.langIndex">
+			<span>{{ link.langName }}</span>
+		</router-link>
+	</language-switcher>`;
+
+	// Insert right after the beginning of <div id="nav">
+	if (content.search(/<div.*id="nav".*>/) != -1) {
+		content = content.replace(/<div.*id="nav".*>/, '$&' + languageSwitcher);
+	}
+	// Or insert right after the beginning the first <div> tag
+	else {
+		content = content.replace(/<div.*>/, '$&' + languageSwitcher);
+	}
+	
 
 	// Replace file
 	fs.writeFileSync(path, content, { encoding: 'utf-8' });

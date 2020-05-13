@@ -33,7 +33,12 @@ function modifyRouter (api) {
 	let content = fs.readFileSync(path, { encoding: 'utf-8' });
 
 	// Find the Vue Router import statement and replace it
-	content = content.replace(/import VueRouter from 'vue-router'/, 'import { LangRouter } from \'vue-lang-router\'');
+	if (ext == 'ts') {
+		content = content.replace(/import VueRouter, { RouteConfig } from 'vue-router'/, 'import { RouteConfig } from \'vue-router\'\nimport { LangRouter } from \'vue-lang-router\'');
+	}
+	else {
+		content = content.replace(/import VueRouter from 'vue-router'/, 'import { LangRouter } from \'vue-lang-router\'');
+	}
 
 	// Find the Vue.use statement and replace it
 	content = content.replace(/Vue.use\(VueRouter\)/, 'Vue.use(LangRouter)');

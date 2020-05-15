@@ -1,5 +1,10 @@
 const fs = require('fs');
 const chalk = require('chalk');
+const { EOL } = require('os');
+
+function warn(msg) {
+	console.log(EOL + chalk.bgYellow.black(' WARN ') + ' ' + chalk.yellow(msg));
+}
 
 module.exports = (api, options, rootOptions) => {
 
@@ -46,7 +51,7 @@ function modifyMain(api) {
 	try {
 		content = fs.readFileSync(path, { encoding: 'utf-8' });
 	} catch (err) {
-		return console.log(chalk.red('\nMain file not found, make sure to import i18n manually!'));
+		return warn('Main file not found, make sure to import i18n manually!');
 	}
 
 	const i18nImport = `import { i18n } from 'vue-lang-router'`;
@@ -58,7 +63,7 @@ function modifyMain(api) {
 	
 	// If there's a non-standalone i18n import, notify user
 	else if (content.search(/^import.*({|,|\s)+i18n(}|,|\s)+.*from.*;?$/m) != -1) {
-		console.log(chalk.red('\nimport i18n already exists in main.' + ext + '. Make sure to use i18n from vue-lang-router.'));
+		warn('import i18n already exists in main.' + ext + '. Make sure to use i18n from vue-lang-router.');
 	}
 
 	// Otherwise insert the import
@@ -67,12 +72,12 @@ function modifyMain(api) {
 
 		// Insert after the last import
 		if (imports != null) {
-			content = content.replace(imports[imports.length - 1], imports[imports.length - 1] + '\n' + i18nImport);
+			content = content.replace(imports[imports.length - 1], imports[imports.length - 1] + EOL + i18nImport);
 		}
 
 		// Or insert at the beginning of the file
 		else {
-			content = i18nImport + '\n' + content;
+			content = i18nImport + EOL + content;
 		}
 	}
 
@@ -90,15 +95,15 @@ function modifyRouter (api) {
 	try {
 		content = fs.readFileSync(path, { encoding: 'utf-8' });
 	} catch (err) {
-		return console.log(chalk.red('\nRouter file not found, make sure to add LangRouter manually!'));
+		return warn('Router file not found, make sure to add LangRouter manually.');
 	}
 
 	// Find the Vue Router import statement and replace it
 	if (ext == 'ts') {
-		content = content.replace(/import VueRouter, { RouteConfig } from 'vue-router'/, 'import { RouteConfig } from \'vue-router\'\nimport { LangRouter } from \'vue-lang-router\'');
+		content = content.replace(/import VueRouter, { RouteConfig } from 'vue-router'/, `import { RouteConfig } from 'vue-router'${EOL}import { LangRouter } from 'vue-lang-router'`);
 	}
 	else {
-		content = content.replace(/import VueRouter from 'vue-router'/, 'import { LangRouter } from \'vue-lang-router\'');
+		content = content.replace(/import VueRouter from 'vue-router'/, `import { LangRouter } from 'vue-lang-router'`);
 	}
 
 	// Find the Vue.use statement and replace it
@@ -119,7 +124,7 @@ function replaceRouterLink(api) {
 	try {
 		content = fs.readFileSync(path, { encoding: 'utf-8' });
 	} catch (err) {
-		return console.log(chalk.red('\nApp.vue not found, skipping <router-link> replacement.'));
+		return warn('App.vue not found, skipping <router-link> replacement.');
 	}
 
 	// Find the opening <router-link> tag and replace it
@@ -140,7 +145,7 @@ function addLanguageSwitcher(api) {
 	try {
 		content = fs.readFileSync(path, { encoding: 'utf-8' });
 	} catch (err) {
-		return console.log(chalk.red('\nApp.vue not found, skipping <language-switcher> example.'));
+		return warn('App.vue not found, skipping <language-switcher> example.');
 	}
 
 	// The <language-switcher> template

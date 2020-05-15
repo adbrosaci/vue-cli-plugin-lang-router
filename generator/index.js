@@ -2,8 +2,44 @@ const fs = require('fs');
 const chalk = require('chalk');
 const { EOL } = require('os');
 
-function warn(msg) {
+function warn (msg) {
 	console.log(EOL + chalk.bgYellow.black(' WARN ') + ' ' + chalk.yellow(msg));
+}
+
+function standaloneImport (str, name) {
+	const regExp = new RegExp(`^import {? *${name} *}? from .+$`, 'm');
+	return str.match(regExp);
+}
+
+function nonStandaloneImport (str, name) {
+	const regExp = new RegExp(`^import .*(( *, *${name})|(${name} *, *)|( *, *{ *${name} *})|({ *${name} *} *, *)).* from .+$`, 'm');
+	return str.match(regExp);
+}
+
+function addImport(str, name, importLine) {
+
+	// If there's a standalone import of "name", replace it
+	if (standaloneImport(str, name) != null) {
+		str = str.replace(standaloneImport(str, name)[0], importLine);
+	}
+	
+	// If there's a non-standalone import, remove "name" from there and add a standalone import
+	else if (nonStandaloneImport(str, name) != null) {
+		const match = nonStandaloneImport(str, name);
+		const index = match.index + match[0].indexOf(match[1]);
+		str = str.substring(0, index) + str.substring(index + match[1].length);
+
+		const imports = str.match(/^import.*$/gm);
+		str = str.replace(imports[imports.length - 1], imports[imports.length - 1] + EOL + importLine);
+	}
+
+	// Otherwise just add a standalone import
+	else {
+		const imports = str.match(/^import.*$/gm);
+		str = str.replace(imports[imports.length - 1], imports[imports.length - 1] + EOL + importLine);
+	}
+
+	return str;
 }
 
 module.exports = (api, options, rootOptions) => {
@@ -54,32 +90,8 @@ function modifyMain(api) {
 		return warn('Main file not found, make sure to import i18n manually!');
 	}
 
-	const i18nImport = `import { i18n } from 'vue-lang-router'`;
-
-	// If there's a standalone i18n import, replace it
-	if (content.search(/^import({|\s)*i18n(}|\s)*from.*;?$/m) != -1) {
-		content = content.replace(/^import({|\s)*i18n(}|\s)*from.*;?$/m, i18nImport);
-	}
-	
-	// If there's a non-standalone i18n import, notify user
-	else if (content.search(/^import.*({|,|\s)+i18n(}|,|\s)+.*from.*;?$/m) != -1) {
-		warn('import i18n already exists in main.' + ext + '. Make sure to use i18n from vue-lang-router.');
-	}
-
-	// Otherwise insert the import
-	else {
-		const imports = content.match(/^import.*$/gm);
-
-		// Insert after the last import
-		if (imports != null) {
-			content = content.replace(imports[imports.length - 1], imports[imports.length - 1] + EOL + i18nImport);
-		}
-
-		// Or insert at the beginning of the file
-		else {
-			content = i18nImport + EOL + content;
-		}
-	}
+	// Add import i18n import line
+	content = addImport(content, 'i18n', `import { i18n } from 'vue-lang-router'`);
 
 	fs.writeFileSync(path, content, { encoding: 'utf-8' });
 }
@@ -98,13 +110,8 @@ function modifyRouter (api) {
 		return warn('Router file not found, make sure to add LangRouter manually.');
 	}
 
-	// Find the Vue Router import statement and replace it
-	if (ext == 'ts') {
-		content = content.replace(/import VueRouter, { RouteConfig } from 'vue-router'/, `import { RouteConfig } from 'vue-router'${EOL}import { LangRouter } from 'vue-lang-router'`);
-	}
-	else {
-		content = content.replace(/import VueRouter from 'vue-router'/, `import { LangRouter } from 'vue-lang-router'`);
-	}
+	// Add LangRouter import line
+	content = addImport(content, 'VueRouter', `import LangRouter from 'vue-lang-router'`);
 
 	// Find the Vue.use statement and replace it
 	content = content.replace(/Vue.use\(VueRouter\)/, 'Vue.use(LangRouter)');

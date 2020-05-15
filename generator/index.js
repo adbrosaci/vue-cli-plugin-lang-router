@@ -11,6 +11,9 @@ module.exports = (api, options, rootOptions) => {
 	});
 
 	api.onCreateComplete(() => {
+		// Modify main.js file
+		modifyMain(api);
+
 		// Modify router file
 		modifyRouter(api);
 
@@ -27,6 +30,53 @@ module.exports = (api, options, rootOptions) => {
 			...options,
 		});
 	}
+
+	// Inject i18n to Vue options in main.js
+	api.injectRootOptions(api.entryFile, 'i18n');
+}
+
+function modifyMain(api) {
+	// Determine extension
+	const ext = api.hasPlugin('typescript') ? 'ts' : 'js';
+
+	// Get path and file content
+	const path = api.resolve(`./src/main.${ext}`);
+	let content;
+	
+	try {
+		content = fs.readFileSync(path, { encoding: 'utf-8' });
+	} catch (err) {
+		return console.log(chalk.red('\nMain file not found, make sure to import i18n manually!'));
+	}
+
+	const i18nImport = `import { i18n } from 'vue-lang-router'`;
+
+	// If there's a standalone i18n import, replace it
+	if (content.search(/^import({|\s)*i18n(}|\s)*from.*;?$/m) != -1) {
+		content = content.replace(/^import({|\s)*i18n(}|\s)*from.*;?$/m, i18nImport);
+	}
+	
+	// If there's a non-standalone i18n import, notify user
+	else if (content.search(/^import.*({|,|\s)+i18n(}|,|\s)+.*from.*;?$/m) != -1) {
+		console.log(chalk.red('\nimport i18n already exists in main.' + ext + '. Make sure to use i18n from vue-lang-router.'));
+	}
+
+	// Otherwise insert the import
+	else {
+		const imports = content.match(/^import.*$/gm);
+
+		// Insert after the last import
+		if (imports != null) {
+			content = content.replace(imports[imports.length - 1], imports[imports.length - 1] + '\n' + i18nImport);
+		}
+
+		// Or insert at the beginning of the file
+		else {
+			content = i18nImport + '\n' + content;
+		}
+	}
+
+	fs.writeFileSync(path, content, { encoding: 'utf-8' });
 }
 
 function modifyRouter (api) {

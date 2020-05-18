@@ -2,6 +2,40 @@ const fs = require('fs');
 const chalk = require('chalk');
 const { EOL } = require('os');
 
+module.exports = (api, options, rootOptions) => {
+
+	// Add Vue Lang Router dependency
+	api.extendPackage({
+		dependencies: {
+			'vue-lang-router': 'git+https://1b6b07f72b8d3d986102b0a4ee692021e23610ba:x-oauth-basic@github.com/radek-altof/vue-lang-router.git',
+		},
+	});
+
+	api.onCreateComplete(() => {
+		// Modify main.js file
+		modifyMain(api);
+
+		// Modify router file
+		modifyRouter(api);
+
+		// Replace <router-link> components with <localized-link>
+		if (options.replaceRouterLink) replaceRouterLink(api);
+
+		// Add <language-switcher> component
+		if (options.addLanguageSwitcher) addLanguageSwitcher(api);
+	});
+
+	// Render the contents of template folder
+	if (options.renderTemplate) {
+		api.render('./template', {
+			...options,
+		});
+	}
+
+	// Inject i18n to Vue options in main.js
+	api.injectRootOptions(api.entryFile, 'i18n');
+}
+
 function warn (msg) {
 	console.log(EOL + chalk.bgYellow.black(' WARN ') + ' ' + chalk.yellow(msg));
 }
@@ -40,40 +74,6 @@ function addImport(str, name, importLine) {
 	}
 
 	return str;
-}
-
-module.exports = (api, options, rootOptions) => {
-
-	// Add Vue Lang Router dependency
-	api.extendPackage({
-		dependencies: {
-			'vue-lang-router': 'git+https://1b6b07f72b8d3d986102b0a4ee692021e23610ba:x-oauth-basic@github.com/radek-altof/vue-lang-router.git',
-		},
-	});
-
-	api.onCreateComplete(() => {
-		// Modify main.js file
-		modifyMain(api);
-
-		// Modify router file
-		modifyRouter(api);
-
-		// Replace <router-link> components with <localized-link>
-		if (options.replaceRouterLink) replaceRouterLink(api);
-
-		// Add <language-switcher> component
-		if (options.addLanguageSwitcher) addLanguageSwitcher(api);
-	});
-
-	// Render the contents of template folder
-	if (options.renderTemplate) {
-		api.render('./template', {
-			...options,
-		});
-	}
-
-	// Inject i18n to Vue options in main.js
-	api.injectRootOptions(api.entryFile, 'i18n');
 }
 
 function modifyMain(api) {

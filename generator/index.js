@@ -110,11 +110,18 @@ function modifyRouter (api) {
 		return warn('Router file not found, make sure to add LangRouter manually.');
 	}
 
-	// Add LangRouter import line
+	// Add imports
 	content = addImport(content, 'VueRouter', `import LangRouter from 'vue-lang-router'`);
+	content = addImport(content, 'translations', `import translations from '../lang/translations'`);
+	content = addImport(content, 'localizedURLs', `import localizedURLs from '../lang/localized-urls'`);
 
 	// Find the Vue.use statement and replace it
-	content = content.replace(/Vue.use\(VueRouter\)/, 'Vue.use(LangRouter)');
+	content = content.replace(/Vue.use\(VueRouter\)/, `
+Vue.use(LangRouter, {
+	defaultLanguage: 'en',
+	translations,
+	localizedURLs,
+})`);
 
 	// Find the new VueRouter statement and replace it
 	content = content.replace(/new VueRouter/, 'new LangRouter');

@@ -1,13 +1,10 @@
-const translations = {
+export default {
 	en: {
 		name: 'English',
-		file: 'en.json',
+		load: () => { return import('./en.json'); },
 	},
 	cs: {
 		name: 'Česky',
-		file: 'cs.json',
+		load: () => { return import('./cs.json'); },
 	},
 };
-const defaultLanguage = 'en';
-
-export { translations, defaultLanguage };

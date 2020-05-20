@@ -16,8 +16,7 @@
 	],
 	"author": {
 		"name": "Radek Altof",
-		"email": "radek.altof@gmail.com",
-		"url": "http://radekaltof.com"
+		"email": "radek.altof@gmail.com"
 	},
 	"license": "MIT",
 	"homepage": "https://github.com/radek-altof/vue-cli-plugin-lang-router#readme",

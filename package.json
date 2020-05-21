@@ -1,7 +1,7 @@
 {
 	"name": "vue-cli-plugin-lang-router",
 	"version": "0.1.1",
-	"description": "Vue CLI plugin that helps install language routing to an existing Vue project",
+	"description": "Vue CLI plugin that installs language routing to an existing Vue project",
 	"main": "index.js",
 	"repository": {
 		"type": "git",

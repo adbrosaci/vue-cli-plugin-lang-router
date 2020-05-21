@@ -52,8 +52,13 @@ function nonStandaloneImport (str, name) {
 
 function addImport(str, name, importLine) {
 
+	// If the required import exist already, do not proceed
+	if (str.indexOf(importLine) != -1) {
+		return str;
+	}
+	
 	// If there's a standalone import of "name", replace it
-	if (standaloneImport(str, name) != null) {
+	else if (standaloneImport(str, name) != null) {
 		str = str.replace(standaloneImport(str, name)[0], importLine);
 	}
 	

@@ -146,11 +146,28 @@ function replaceRouterLink(api) {
 		return warn('App.vue not found, skipping <router-link> replacement.');
 	}
 
+	// Skip content: avoid replacing <router-link> inside <language-switcher>
+	let skippedContent = content.match(/<language-switcher(.|\r\n|\r|\n)*?<\/language-switcher>/g);
+
+	for (let i = 0, uniqueId; i < skippedContent.length; i++) {
+		uniqueId = i + '-' + Date.now();
+		content = content.replace(skippedContent[i], uniqueId);
+		skippedContent[i] = {
+			originalText: skippedContent[i],
+			replacement: uniqueId
+		};
+	}
+
 	// Find the opening <router-link> tag and replace it
 	content = content.replace(/<router-link/g, '<localized-link');
 
 	// Find the closing </router-link> tag and replace it
 	content = content.replace(/<\/router-link>/g, '<\/localized-link>');
+
+	// Put the skipped content back
+	for (i = 0; i < skippedContent.length; i++) {
+		content = content.replace(skippedContent[i].replacement, skippedContent[i].originalText);
+	}
 
 	// Replace file
 	fs.writeFileSync(path, content, { encoding: 'utf-8' });

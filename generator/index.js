@@ -7,7 +7,7 @@ module.exports = (api, options, rootOptions) => {
 	// Add Vue Lang Router dependency
 	api.extendPackage({
 		dependencies: {
-			'vue-lang-router': 'git+https://1b6b07f72b8d3d986102b0a4ee692021e23610ba:x-oauth-basic@github.com/radek-altof/vue-lang-router.git',
+			'vue-lang-router': '^1.0.0',
 		},
 	});
 

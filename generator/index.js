@@ -4,6 +4,11 @@ const { EOL } = require('os');
 
 module.exports = (api, options, rootOptions) => {
 
+	// Check if router is installed
+	if (!checkVueRouter(api)) {
+		return error('Vue Router is not installed. Run "vue add router" first.');
+	};
+
 	// Add Vue Lang Router dependency
 	api.extendPackage({
 		dependencies: {
@@ -38,6 +43,12 @@ module.exports = (api, options, rootOptions) => {
 
 function warn (msg) {
 	console.log(EOL + chalk.bgYellow.black(' WARN ') + ' ' + chalk.yellow(msg));
+	return true;
+}
+
+function error (msg) {
+	console.log(EOL + chalk.bgRed.black(' ERROR ') + ' ' + chalk.red(msg));
+	return false;
 }
 
 function standaloneImport (str, name) {
@@ -79,6 +90,26 @@ function addImport(str, name, importLine) {
 	}
 
 	return str;
+}
+
+function checkVueRouter(api) {
+	// Get path and file content
+	const path = api.resolve(`./package.json`);
+	let content;
+	
+	try {
+		content = fs.readFileSync(path, { encoding: 'utf-8' });
+	} catch (err) {
+		return error('package.json not found');
+	}
+
+	// Check if Vue Router is installed
+	if (content.match(/"dependencies":[^}]*"vue-router"[\s\S]*?}/g) !== null) {
+		return true;
+	}
+	else {
+		return false;
+	}
 }
 
 function modifyMain(api) {

@@ -12,7 +12,7 @@ module.exports = (api, options, rootOptions) => {
 	// Add Vue Lang Router dependency
 	api.extendPackage({
 		dependencies: {
-			'vue-lang-router': '^1.0.1',
+			'vue-lang-router': '^1.2.3',
 		},
 	});
 

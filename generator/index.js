@@ -37,9 +37,6 @@ module.exports = (api, options, rootOptions) => {
 			...options,
 		});
 	}
-
-	// Inject i18n to Vue options in main.js
-	api.injectRootOptions(api.entryFile, 'i18n');
 }
 
 function info (msg) {
@@ -145,6 +142,16 @@ function modifyMain(api) {
 
 	// Add import i18n import line
 	content = addImport(content, 'i18n', `import { i18n } from 'vue-lang-router'`);
+
+	// Add i18n to Vue
+	if (vueVersion === 2) {
+		const newVueMatch = content.match(/new Vue.*\(([^\(\)]*|\([\s\S]*\))*\)/)[0];
+		const addedI18n = newVueMatch.replace('router,', 'router,' + EOL + 'i18n,')
+		content = content.replace(newVueMatch, addedI18n);
+	}
+	else if (vueVersion === 3) {
+		content = content.replace('.use(router)', '.use(router).use(i18n)');
+	}
 
 	fs.writeFileSync(path, content, { encoding: 'utf-8' });
 }

@@ -1,13 +1,18 @@
 const fs = require('fs');
 const chalk = require('chalk');
 const { EOL } = require('os');
+let vueVersion = null;
 
 module.exports = (api, options, rootOptions) => {
 
+	// Get Vue version
+	vueVersion = Number(rootOptions.vueVersion);
+
+	// Check if Vue is installed
+	if (!checkVue(api)) return false;
+
 	// Check if router is installed
-	if (!checkVueRouter(api)) {
-		return error('Vue Router is not installed. Run "vue add router" first.');
-	};
+	if (!checkVueRouter(api)) return false;
 
 	// Add Vue Lang Router dependency
 	api.extendPackage({
@@ -41,13 +46,18 @@ module.exports = (api, options, rootOptions) => {
 	api.injectRootOptions(api.entryFile, 'i18n');
 }
 
+function info (msg) {
+	console.log(chalk.bgCyan.black(' INFO ') + ' ' + chalk.cyan(msg));
+	return true;
+}
+
 function warn (msg) {
-	console.log(EOL + chalk.bgYellow.black(' WARN ') + ' ' + chalk.yellow(msg));
+	console.log(chalk.bgYellow.black(' WARN ') + ' ' + chalk.yellow(msg));
 	return true;
 }
 
 function error (msg) {
-	console.log(EOL + chalk.bgRed.black(' ERROR ') + ' ' + chalk.red(msg));
+	console.log(chalk.bgRed.black(' ERROR ') + ' ' + chalk.red(msg));
 	return false;
 }
 
@@ -92,24 +102,21 @@ function addImport(str, name, importLine) {
 	return str;
 }
 
-function checkVueRouter(api) {
-	// Get path and file content
-	const path = api.resolve(`./package.json`);
-	let content;
-	
-	try {
-		content = fs.readFileSync(path, { encoding: 'utf-8' });
-	} catch (err) {
-		return error('package.json not found');
+function checkVue() {
+	if (vueVersion === 2 || vueVersion === 3) {
+		return info(`Installing Language Router for Vue ${vueVersion}.`);
 	}
-
-	// Check if Vue Router is installed
-	if (content.match(/"dependencies":[^}]*"vue-router"[\s\S]*?}/g) !== null) {
-		return true;
+	else if (!vueVersion) {
+		return error('Vue is not installed. Run "vue create ." first.');
 	}
 	else {
-		return false;
+		return error(`Detected Vue version ${vueVersion}. Language Router plugin is only compatible with Vue versions 2 & 3. Quitting.`);
 	}
+}
+
+function checkVueRouter(api) {
+	if (api.generator.pkg.dependencies['vue-router']) return true;
+	else return error('Vue Router is not installed. Run "vue add router" first.');
 }
 
 function modifyMain(api) {

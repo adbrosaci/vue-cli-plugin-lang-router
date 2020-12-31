@@ -11,15 +11,11 @@ module.exports = (api, options, rootOptions) => {
 	// Check if Vue is installed
 	if (!checkVue(api)) return false;
 
-	// Check if router is installed
+	// Check if Router is installed
 	if (!checkVueRouter(api)) return false;
 
-	// Add Vue Lang Router dependency
-	api.extendPackage({
-		dependencies: {
-			'vue-lang-router': '^1.2.3',
-		},
-	});
+	// Add Lang Router dependency
+	addLangRouter(api);
 
 	api.onCreateComplete(() => {
 		// Modify main.js file
@@ -117,6 +113,20 @@ function checkVue() {
 function checkVueRouter(api) {
 	if (api.generator.pkg.dependencies['vue-router']) return true;
 	else return error('Vue Router is not installed. Run "vue add router" first.');
+}
+
+function addLangRouter(api) {
+	// Lang Router semver mapped to Vue versions
+	let versionMap = {
+		'2': '^1.2.3',
+		'3': '^2.0.0-beta.1',
+	};
+
+	api.extendPackage({
+		dependencies: {
+			'vue-lang-router': versionMap[vueVersion],
+		},
+	});
 }
 
 function modifyMain(api) {

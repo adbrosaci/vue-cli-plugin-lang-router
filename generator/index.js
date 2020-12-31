@@ -167,27 +167,60 @@ function modifyRouter (api) {
 	try {
 		content = fs.readFileSync(path, { encoding: 'utf-8' });
 	} catch (err) {
-		return warn('Router file not found, make sure to add LangRouter manually.');
+		return warn('Router file not found, make sure to add Language Router manually.');
 	}
 
-	// Add imports
-	content = addImport(content, 'VueRouter', `import LangRouter from 'vue-lang-router'`);
+	// Add translation & localized URL imports
 	content = addImport(content, 'translations', `import translations from '../lang/translations'`);
 	content = addImport(content, 'localizedURLs', `import localizedURLs from '../lang/localized-urls'`);
 
+	// Change file for Vue specific version
+	if (vueVersion === 2) content = modifyRouter_Vue2(content);
+	else if (vueVersion === 3) content = modifyRouter_Vue3(content);
+
+	// Replace file
+	fs.writeFileSync(path, content, { encoding: 'utf-8' });
+}
+
+function modifyRouter_Vue2 (content) {
+	// Add Language Router import
+	content = addImport(content, 'VueRouter', `import LangRouter from 'vue-lang-router'`);
+
 	// Find the Vue.use statement and replace it
-	content = content.replace(/Vue.use\(VueRouter\)/, `
+	const newContent = `
 Vue.use(LangRouter, {
 	defaultLanguage: 'en',
 	translations,
 	localizedURLs,
-})`);
+})`;
+
+	content = content.replace('Vue.use(VueRouter)', newContent);
 
 	// Find the new VueRouter statement and replace it
-	content = content.replace(/new VueRouter/, 'new LangRouter');
+	content = content.replace('new VueRouter', 'new LangRouter');
 
-	// Replace file
-	fs.writeFileSync(path, content, { encoding: 'utf-8' });
+	return content;
+}
+
+function modifyRouter_Vue3 (content) {
+	// Add Language Router import
+	content = addImport(content, 'createRouter', `import { createLangRouter } from 'vue-lang-router'`);
+
+	// Find createRouter statement and replace it with new content
+	const createRouterMatch = content.match(/const router.+createRouter.*\((([^\(\)]*|\([\s\S]*\))*)\)/);
+
+	const newContent = `
+const langRouterOptions = {
+	defaultLanguage: 'en',
+	translations,
+	localizedURLs,
+}
+const routerOptions = ${createRouterMatch[1]}
+const router = createLangRouter(langRouterOptions, routerOptions)`;
+
+	content = content.replace(createRouterMatch[0], newContent);
+
+	return content;
 }
 
 function replaceRouterLink(api) {

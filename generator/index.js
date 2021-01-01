@@ -261,12 +261,24 @@ function addLanguageSwitcher(api) {
 	}
 
 	// The <language-switcher> template
-	const languageSwitcher = `
-	<language-switcher v-slot="{ links }">
-		<router-link :to="link.url" v-for="link in links" :key="link.langIndex">
-			<span>{{ link.langName }}</span>
-		</router-link>
-	</language-switcher>`;
+	let languageSwitcher = '';
+
+	if (vueVersion === 2) {
+		languageSwitcher = `
+		<language-switcher v-slot="{ links }">
+			<router-link :to="link.url" v-for="link in links" :key="link.langIndex">
+				<span>{{ link.langName }}</span>
+			</router-link>
+		</language-switcher>`;
+	}
+	else if (vueVersion === 3) {
+		languageSwitcher = `
+		<language-switcher v-slot="{ links }" active-class="router-link-exact-active">
+			<router-link :to="link.url" v-for="link in links" :key="link.langIndex" :class="link.activeClass" exact-active-class="">
+				<span>{{ link.langName }}</span>
+			</router-link>
+		</language-switcher>`;
+	}
 
 	// Insert right after the beginning of <div id="nav">
 	if (content.search(/<div.*id="nav".*>/) != -1) {

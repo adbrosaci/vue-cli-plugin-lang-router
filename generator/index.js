@@ -33,6 +33,9 @@ module.exports = (api, options, rootOptions) => {
 
 		// Add <language-switcher> component
 		if (options.addLanguageSwitcher) addLanguageSwitcher(api);
+
+		// Replace text in About page
+		if (options.renderTemplate) replaceAboutText(api);
 	});
 
 	// Render the contents of template folder
@@ -274,6 +277,26 @@ function addLanguageSwitcher(api) {
 		content = content.replace(/<div.*>/, '$&' + languageSwitcher);
 	}
 	
+	// Replace file
+	fs.writeFileSync(path, content, { encoding: 'utf-8' });
+}
+
+
+// Replace text in About page with translations in template
+function replaceAboutText(api) {
+
+	// Get path and file content
+	const path = api.resolve('./src/views/About.vue');
+	let content;
+	
+	try {
+		content = fs.readFileSync(path, { encoding: 'utf-8' });
+	} catch (err) {
+		return;
+	}
+
+	content = content.replace('This is an about page', `{{ $t('about.example') }}`);
+
 	// Replace file
 	fs.writeFileSync(path, content, { encoding: 'utf-8' });
 }

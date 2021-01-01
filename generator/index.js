@@ -26,7 +26,7 @@ module.exports = (api, options, rootOptions) => {
 		modifyMain(api);
 
 		// Modify router file
-		modifyRouter(api);
+		modifyRouter(api, options);
 
 		// Replace <router-link> components with <localized-link>
 		if (options.replaceRouterLink) replaceRouterLink(api);
@@ -116,7 +116,7 @@ function modifyMain(api) {
 
 
 // Modify router file to import templated stuff and use Language Router instead of Vue Router
-function modifyRouter (api) {
+function modifyRouter (api, options) {
 
 	// Determine extension
 	const ext = api.hasPlugin('typescript') ? 'ts' : 'js';
@@ -132,12 +132,14 @@ function modifyRouter (api) {
 	}
 
 	// Add translation & localized URL imports
-	content = addImport(content, 'translations', `import translations from '../lang/translations'`);
-	content = addImport(content, 'localizedURLs', `import localizedURLs from '../lang/localized-urls'`);
+	if (options.renderTemplate) {
+		content = addImport(content, 'translations', `import translations from '../lang/translations'`);
+		content = addImport(content, 'localizedURLs', `import localizedURLs from '../lang/localized-urls'`);
+	}
 
 	// Change file for Vue specific version
-	if (vueVersion === 2) content = modifyRouter_Vue2(content);
-	else if (vueVersion === 3) content = modifyRouter_Vue3(content);
+	if (vueVersion === 2) content = modifyRouter_Vue2(content, options);
+	else if (vueVersion === 3) content = modifyRouter_Vue3(content, options);
 
 	// Replace file
 	fs.writeFileSync(path, content, { encoding: 'utf-8' });
@@ -145,17 +147,20 @@ function modifyRouter (api) {
 
 
 // Make Vue 2 specific changes to router file
-function modifyRouter_Vue2 (content) {
+function modifyRouter_Vue2 (content, options) {
 	
 	// Add Language Router import
 	content = addImport(content, 'VueRouter', `import LangRouter from 'vue-lang-router'`);
 
 	// Find the Vue.use statement and replace it
+	const emptyTranslations = (options.renderTemplate ? '' : ': { /* Provide your translations here */ }');
+	const emptyLocalizedURLs = (options.renderTemplate ? '' : ': { /* Provide your localized URLs here (optional) */ }');
+
 	const newStatement =
 `Vue.use(LangRouter, {
 	defaultLanguage: 'en',
-	translations,
-	localizedURLs,
+	translations${emptyTranslations},
+	localizedURLs${emptyLocalizedURLs},
 })`;
 
 	content = content.replace('Vue.use(VueRouter)', newStatement);
@@ -168,24 +173,27 @@ function modifyRouter_Vue2 (content) {
 
 
 // Make Vue 3 specific changes to router file
-function modifyRouter_Vue3 (content) {
+function modifyRouter_Vue3 (content, options) {
 
 	// Add Language Router import
 	content = addImport(content, 'createRouter', `import { createLangRouter } from 'vue-lang-router'`);
 
 	// Find createRouter statement and replace it
-	const createRouterMatch = content.match(/const router.+createRouter.*\((([^\(\)]*|\([\s\S]*\))*)\)/);
+	const [ createRouterStatement, routerOptions ] = content.match(/const router.+createRouter.*\((([^\(\)]*|\([\s\S]*\))*)\)/);
+
+	const emptyTranslations = (options.renderTemplate ? '' : ': { /* Provide your translations here */ }');
+	const emptyLocalizedURLs = (options.renderTemplate ? '' : ': { /* Provide your localized URLs here (optional) */ }');
 
 	const newStatement =
 `const langRouterOptions = {
 	defaultLanguage: 'en',
-	translations,
-	localizedURLs,
+	translations${emptyTranslations},
+	localizedURLs${emptyLocalizedURLs},
 }
-const routerOptions = ${createRouterMatch[1]}
+const routerOptions = ${routerOptions}
 const router = createLangRouter(langRouterOptions, routerOptions)`;
 
-	content = content.replace(createRouterMatch[0], newStatement);
+	content = content.replace(createRouterStatement, newStatement);
 
 	return content;
 }

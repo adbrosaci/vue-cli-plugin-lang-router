@@ -12,7 +12,7 @@ module.exports = [
 	},{
 		name: 'addLanguageSwitcher',
 		type: 'confirm',
-		message: 'Add example <language-switcher> component?',
-		default: false,
+		message: 'Add example <language-switcher> component to App.vue?',
+		default: true,
 	},
 ];

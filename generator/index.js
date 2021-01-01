@@ -1,7 +1,11 @@
 const fs = require('fs');
-const chalk = require('chalk');
 const { EOL } = require('os');
+
+const { info, warn, error } = require('./helpers/logging');
+const addImport = require('./helpers/addImport')
+
 let vueVersion = null;
+
 
 module.exports = (api, options, rootOptions) => {
 
@@ -39,62 +43,8 @@ module.exports = (api, options, rootOptions) => {
 	}
 }
 
-function info (msg) {
-	console.log(chalk.bgCyan.black(' INFO ') + ' ' + chalk.cyan(msg));
-	return true;
-}
 
-function warn (msg) {
-	console.log(chalk.bgYellow.black(' WARN ') + ' ' + chalk.yellow(msg));
-	return true;
-}
-
-function error (msg) {
-	console.log(chalk.bgRed.black(' ERROR ') + ' ' + chalk.red(msg));
-	return false;
-}
-
-function standaloneImport (str, name) {
-	const regExp = new RegExp(`^import {? *${name} *}? from .+$`, 'm');
-	return str.match(regExp);
-}
-
-function nonStandaloneImport (str, name) {
-	const regExp = new RegExp(`^import .*(( *, *${name})|(${name} *, *)|( *, *{ *${name} *})|({ *${name} *} *, *)).* from .+$`, 'm');
-	return str.match(regExp);
-}
-
-function addImport(str, name, importLine) {
-
-	// If the required import exist already, do not proceed
-	if (str.indexOf(importLine) != -1) {
-		return str;
-	}
-	
-	// If there's a standalone import of "name", replace it
-	else if (standaloneImport(str, name) != null) {
-		str = str.replace(standaloneImport(str, name)[0], importLine);
-	}
-	
-	// If there's a non-standalone import, remove "name" from there and add a standalone import
-	else if (nonStandaloneImport(str, name) != null) {
-		const match = nonStandaloneImport(str, name);
-		const index = match.index + match[0].indexOf(match[1]);
-		str = str.substring(0, index) + str.substring(index + match[1].length);
-
-		const imports = str.match(/^import.*$/gm);
-		str = str.replace(imports[imports.length - 1], imports[imports.length - 1] + EOL + importLine);
-	}
-
-	// Otherwise just add a standalone import
-	else {
-		const imports = str.match(/^import.*$/gm);
-		str = str.replace(imports[imports.length - 1], imports[imports.length - 1] + EOL + importLine);
-	}
-
-	return str;
-}
-
+// Check if Vue is installed and has supported version
 function checkVue() {
 	if (vueVersion === 2 || vueVersion === 3) {
 		return info(`Installing Language Router for Vue ${vueVersion}.`);
@@ -107,13 +57,18 @@ function checkVue() {
 	}
 }
 
+
+// Check if Vue Router is installed
 function checkVueRouter(api) {
 	if (api.generator.pkg.dependencies['vue-router']) return true;
 	else return error('Vue Router is not installed. Run "vue add router" first.');
 }
 
+
+// Add Language Router to package.json and download it together with dependencies
 function addLangRouter(api) {
-	// Lang Router semver mapped to Vue versions
+
+	// Language Router semver mapped to Vue major versions
 	let versionMap = {
 		'2': '^1.2.3',
 		'3': '^2.0.0-beta.1',
@@ -126,7 +81,10 @@ function addLangRouter(api) {
 	});
 }
 
+
+// Modify main.js file to import and use I18n
 function modifyMain(api) {
+
 	// Determine extension
 	const ext = api.hasPlugin('typescript') ? 'ts' : 'js';
 
@@ -156,7 +114,10 @@ function modifyMain(api) {
 	fs.writeFileSync(path, content, { encoding: 'utf-8' });
 }
 
+
+// Modify router file to import templated stuff and use Language Router instead of Vue Router
 function modifyRouter (api) {
+
 	// Determine extension
 	const ext = api.hasPlugin('typescript') ? 'ts' : 'js';
 	
@@ -182,19 +143,22 @@ function modifyRouter (api) {
 	fs.writeFileSync(path, content, { encoding: 'utf-8' });
 }
 
+
+// Make Vue 2 specific changes to router file
 function modifyRouter_Vue2 (content) {
+	
 	// Add Language Router import
 	content = addImport(content, 'VueRouter', `import LangRouter from 'vue-lang-router'`);
 
 	// Find the Vue.use statement and replace it
-	const newContent = `
-Vue.use(LangRouter, {
+	const newStatement =
+`Vue.use(LangRouter, {
 	defaultLanguage: 'en',
 	translations,
 	localizedURLs,
 })`;
 
-	content = content.replace('Vue.use(VueRouter)', newContent);
+	content = content.replace('Vue.use(VueRouter)', newStatement);
 
 	// Find the new VueRouter statement and replace it
 	content = content.replace('new VueRouter', 'new LangRouter');
@@ -202,15 +166,18 @@ Vue.use(LangRouter, {
 	return content;
 }
 
+
+// Make Vue 3 specific changes to router file
 function modifyRouter_Vue3 (content) {
+
 	// Add Language Router import
 	content = addImport(content, 'createRouter', `import { createLangRouter } from 'vue-lang-router'`);
 
-	// Find createRouter statement and replace it with new content
+	// Find createRouter statement and replace it
 	const createRouterMatch = content.match(/const router.+createRouter.*\((([^\(\)]*|\([\s\S]*\))*)\)/);
 
-	const newContent = `
-const langRouterOptions = {
+	const newStatement =
+`const langRouterOptions = {
 	defaultLanguage: 'en',
 	translations,
 	localizedURLs,
@@ -218,12 +185,15 @@ const langRouterOptions = {
 const routerOptions = ${createRouterMatch[1]}
 const router = createLangRouter(langRouterOptions, routerOptions)`;
 
-	content = content.replace(createRouterMatch[0], newContent);
+	content = content.replace(createRouterMatch[0], newStatement);
 
 	return content;
 }
 
+
+// Replace all <router-link> components with <localized-link>
 function replaceRouterLink(api) {
+
 	// Get path and file content
 	const path = api.resolve('./src/App.vue');
 	let content;
@@ -265,7 +235,10 @@ function replaceRouterLink(api) {
 	fs.writeFileSync(path, content, { encoding: 'utf-8' });
 }
 
+
+// Add <language-switcher> component to the beginning of #nav in App.vue
 function addLanguageSwitcher(api) {
+
 	// Get path and file content
 	const path = api.resolve('./src/App.vue');
 	let content;

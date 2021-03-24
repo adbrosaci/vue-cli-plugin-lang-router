@@ -73,8 +73,8 @@ function addLangRouter(api) {
 
 	// Language Router semver mapped to Vue major versions
 	let versionMap = {
-		'2': '^1.2.3',
-		'3': '^2.0.0-beta.1',
+		'2': '^1.3.0',
+		'3': '^2.1.0',
 	};
 
 	api.extendPackage({
